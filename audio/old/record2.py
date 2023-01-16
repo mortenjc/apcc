@@ -8,12 +8,13 @@ mpl.use('tkagg')
 import matplotlib.pyplot as plotter
 
 
-def plottime(f):
+def plottime(f, r, n):
     figure, ax = plotter.subplots(1, 1)
     plotter.subplots_adjust(hspace=1)
+    assert len(f) == n
 
     #ax.set_title(title)
-    t = np.arange(len(f));
+    t = np.arange(len(f))
     ax.plot(t, f)
     ax.set_xlabel('t')
     ax.set_ylabel('ampl.')
@@ -68,12 +69,17 @@ try:
                 break
 
     print("length {}".format(q.qsize()))
-    ref = q.get()
+
+    ref = np.arange(0)
     for i in range(q.qsize()):
         data = q.get()
         ref = np.append(ref, data[:,0])
-    print(len(ref))
-    plottime(ref)
+    print(f'len(ref) {len(ref)}')
+    assert len(ref) == args.samples
+    print(f'samplerate {asamplerate} ')
+    print(f' ampl max {np.amax(ref)}')
+    print(f' ampl min {np.amin(ref)}')
+    plottime(ref, asamplerate)
     plotter.show()
 
 
