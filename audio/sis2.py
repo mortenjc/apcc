@@ -1,91 +1,102 @@
 #!/usr/bin/env python3
 
-import time
+import time, argparse, sys
 import sounddevice as sd
 import numpy as np
 import matplotlib as mpl
-mpl.use('tkagg')
+#mpl.use('tkagg')
 import matplotlib.pyplot as plt
 
+def main(device, samplerate, nsamples):
+    mpl.rcParams['text.color'] = 'green'
+    mpl.rcParams['axes.labelcolor'] = 'green'
+    mpl.rcParams['xtick.color'] = 'green'
+    mpl.rcParams['ytick.color'] = 'green'
 
-mpl.rcParams['text.color'] = 'green'
-mpl.rcParams['axes.labelcolor'] = 'green'
-mpl.rcParams['xtick.color'] = 'green'
-mpl.rcParams['ytick.color'] = 'green'
+    sd.default.channels = 1
+    sd.default.samplerate = samplerate
 
-#Sis 2i2: 44.1kHz, 48kHz, 88.2kHz, 96kHz, 176.4kHz, 192kHz
-rates = [44100, 48000, 88200, 96000, 176400, 192000]
+    device_info = sd.query_devices(device, 'input')
+    print(device_info)
 
-sd.default.samplerate = 88200
-#sd.default.dtype = 'int32'
-sd.default.channels = 1
+    sf = samplerate
+    print(f'collect {nsamples} samples ({nsamples/samplerate:.2f} s)')
 
+    fig = plt.figure(figsize = (12, 6))
+    fig.patch.set_facecolor('black')
+    plt.ion()
+    plt.show()
 
-device_info = sd.query_devices(3, 'input')
-print(device_info)
+    wind = np.hamming(nsamples)
 
-sf = 88200
-dt = 0.1 # seconds
-nsamples = int(sf * dt)
+    while True:
+        t = np.arange(nsamples)/sf
+        rec = sd.rec(nsamples, samplerate=sf)
+        sd.wait()
 
+        ax = plt.subplot(111)
 
-fig = plt.figure(figsize = (12, 6))
-fig.patch.set_facecolor('black')
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_color('green')    # change color
 
-wind = np.hamming(nsamples)
+        ax.set_facecolor("black")
+        ax.set_title(f'sample freq {sf} (Hz)', color='green')
+        ax.set_facecolor("black")
 
-while True:
-    t = np.arange(nsamples)/sf
-    rec = sd.rec(nsamples, samplerate=sf)
-    sd.wait()
+        if 1:
+            sp = np.fft.rfft(rec, axis=0)
+        else:
+            sp = np.fft.rfft(np.multiply(rec, wind), axis=0)
 
-    ax = plt.subplot(111)
-    ax.set_facecolor("black")
-    ax.set_title(f'sample freq {sf} (Hz)', color='green')
+        N = len(sp)
+        n = np.arange(N)
+        T = N/sf
+        f = n/T/2
 
-    for axis in ['top', 'bottom', 'left', 'right']:
-        #ax.spines[axis].set_linewidth(2.5)  # change width
-        ax.spines[axis].set_color('green')    # change color
+        sp = np.abs(sp)
+        # maxidx = np.argmax(sp)
+        # maxfreq = maxidx/T/2
+        # maxval = np.amax(sp)
+        #
+        # textstr = f'f {maxfreq:7.1f} Hz\na {maxval:3.1f} dB'
+        #
+        # props = dict(boxstyle='round', facecolor='black', alpha=0.5)
+        # ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
+        #     verticalalignment='top', bbox=props)
 
+        plt.plot(f, sp, color='green')
 
-    if 1:
-        sp = np.fft.rfft(rec, axis=0)
-    else:
-        sign = np.array(rec)
-        filtd = np.multiply(sign, wind)
-        sp = np.fft.rfft(filtd)
+        plt.xlabel('f (Hz)', color='green')
+        #ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.ylabel('a.u.', color='green')
+        plt.ylim(0.01, 100000)
+        plt.xlim(0.01, 22000)
+        plt.grid(linestyle = 'dotted', color='green')
 
-
-    N = len(sp)
-    n = np.arange(N)
-    T = N/sf
-    f = n/T/2
-
-    sp = np.abs(sp)
-    maxidx = np.argmax(sp)
-    maxfreq = maxidx/T/2
-    maxval = 20*np.log10(np.amax(sp))
-
-    textstr = f'f {maxfreq:7.1f} Hz\na {maxval:3.1f} dB'
-
-    props = dict(boxstyle='round', facecolor='black', alpha=0.5)
-    ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
-        verticalalignment='top', bbox=props)
-
-    plt.plot(f, 20*sp, color='green')
-    #plt.plot(t, rec)
-    plt.xlabel('f (Hz)', color='green')
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    plt.ylabel('dB', color='green')
-    plt.ylim(0.01, 100000)
-    plt.xlim(0, 22000)
-    plt.grid(linestyle = 'dotted', color='green')
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+        time.sleep(0.01)
+        plt.clf()
 
 
-    plt.show(False)
-    #plt.draw()
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    time.sleep(0.01)
-    plt.clf()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('-l', '--list-devices', action='store_true',
+              help='show list of audio devices and exit')
+    parser.add_argument('-d', '--device', type=int, default=0,
+              help='device index')
+    parser.add_argument('-c', '--channels', type=int, default=1,
+              help='number of channels to record')
+    parser.add_argument('-s', '--samplerate', type=int, default=88200,
+              help='number of samples per second')
+    parser.add_argument('-n', '--samples', type=int, default=88200,
+              help='number of samples to capture')
+
+    args, remaining = parser.parse_known_args()
+
+    if args.list_devices:
+        print(sd.query_devices())
+        parser.exit(0)
+
+    main(args.device, args.samplerate, args.samples)
