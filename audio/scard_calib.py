@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 
-import argparse
-import sounddevice as sd
-from collections import namedtuple
+# 
 
-input = namedtuple('input', ['device', 'samplerate', 'samples', 'channels', 'norm'])
+import argparse, scard
 
-def main(input, rounds):
-    sd.default.device = input.device
-    sd.default.channels = input.channels
-    sd.default.samplerate = input.samplerate
+def main(scard, rounds):
 
-    device_info = sd.query_devices(input.device, 'input')
+    device_info = scard.query()
     print(f'Recording from {device_info["name"]}')
     print(f'collect {input.samples} samples ({input.samples/input.samplerate:.2f} s)')
 
@@ -21,19 +16,15 @@ def main(input, rounds):
     n = 0
     for r in range(rounds):
         print(f'round {r}')
-        rec = sd.rec(input.samples)
-        sd.wait()
+        rec = scard.record()
         n += 1
 
+        tmin, tmax = scard.stat(rec)
+        print(tmin)
         for ch in range(input.channels):
-            print(f'  channel {ch}')
-            data = [x[ch] for x in rec]
-            maxVal = max(data)
-            minVal = min(data)
-
-            print(f'    max: {maxVal:.9f}, min: {minVal:.9f}')
-            maxs[ch] += maxVal
-            mins[ch] += minVal
+            print(f'    max: {tmax[ch]:.9f}, min: {tmin[ch]:.9f}')
+            maxs[ch] += tmax[ch]
+            mins[ch] += tmin[ch]
             print(f'    avg: {maxs[ch]/n:.9f}, avg: {mins[ch]/n:.9f}')
 
     for ch in range(input.channels):
@@ -54,19 +45,20 @@ if __name__ == '__main__':
     parser.add_argument('--samples', type=int, default=192000,
         help='number of samples to capture')
     parser.add_argument('--norm', type=float, default=1.0,
-        help='normalization (to 1V)')
+        help='normalization (to [norm] V)')
     parser.add_argument('--rounds', type=int, default=1,
         help='averaging rounds')
 
     args, remaining = parser.parse_known_args()
 
-    if args.list_devices:
-        print(sd.query_devices())
-        parser.exit(0)
-
     assert args.srate == args.samples
     assert args.channels == 1 or args.channels == 2, "invalid number of channels"
 
-    input = input(args.device, args.srate, args.samples, args.channels, args.norm)
+    if args.list_devices:
+        scard.query_devices()
+        parser.exit(0)
 
-    main(input, args.rounds)
+    input = scard.input(args.device, args.srate, args.samples, args.channels, args.norm)
+    scard = scard.scard(input)
+
+    main(scard, args.rounds)

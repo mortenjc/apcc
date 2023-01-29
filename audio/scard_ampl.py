@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-# Record M rounds of N samples from two channels
-# Perform cross correllation and ploit the spectrum
-# normalization is still TBD
+# Record N samples from uSB sounddevice and plot the
+# samples (amplitude) as function of time
 
 import scard, plot, time, argparse, sys
 from collections import namedtuple
@@ -17,26 +16,12 @@ def main(sc, rounds):
     cc = np.zeros(96001)
     ccplot = plot.plot()
 
-
     sf = sc.input.samplerate
     t = np.arange(sc.input.samples)/sf
 
-    for r in range(rounds):
-        print(f'round {r}')
-        rec = sc.record()
+    rec = sc.record()
+    ccplot.plotamp(t, rec, 'a(t)')
 
-        sp1 = np.fft.rfft(rec[0])
-        sp2 = np.fft.rfft(rec[1])
-        cc = cc + sp1 * np.conjugate(sp2)
-
-    cc = np.sqrt(abs(cc))/rounds
-
-    N = len(sp1)
-    n = np.arange(N)
-    f = n/(N/sf)/2
-
-    ccplot.plotfft(f, [cc])
-    #ccplot.plotfft(f, [abs(sp2), abs(sp1)])
 
 
 if __name__ == '__main__':
@@ -51,8 +36,6 @@ if __name__ == '__main__':
         help='number of samples to capture')
     parser.add_argument('--norm', type=float, default=1.0,
         help='normalization (to 1V)')
-    parser.add_argument('--rounds', type=int, default=1,
-        help='number of cc rounds')
 
     args, remaining = parser.parse_known_args()
 
