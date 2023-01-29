@@ -12,7 +12,7 @@ mpl.use('macosx')
 import matplotlib.pyplot as plt
 
 
-def main(sc, rounds):
+def main(sc):
     cc = np.zeros(96001)
     ccplot = plot.plot()
 
@@ -20,7 +20,11 @@ def main(sc, rounds):
     t = np.arange(sc.input.samples)/sf
 
     rec = sc.record()
-    ccplot.plotamp(t, rec, 'a(t)')
+
+    n1 = [sc.input.norm * x for x in rec[0]]
+    n2 = [sc.input.norm * x for x in rec[1]]
+    #print(rec)
+    ccplot.plotamp(t, [n1, n2], 'a(t)')
 
 
 
@@ -37,10 +41,10 @@ if __name__ == '__main__':
     parser.add_argument('--norm', type=float, default=1.0,
         help='normalization (to 1V)')
 
-    args, remaining = parser.parse_known_args()
 
-    assert args.srate == args.samples
     channels = 2
+
+    args, remaining = parser.parse_known_args()
 
     if args.l:
         scard.query_devices()
@@ -49,4 +53,4 @@ if __name__ == '__main__':
     input = scard.input(args.device, args.srate, args.samples, channels, args.norm)
     scard = scard.scard(input)
 
-    main(scard, args.rounds)
+    main(scard)

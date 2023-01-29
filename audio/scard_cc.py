@@ -25,8 +25,10 @@ def main(sc, rounds):
         print(f'round {r}')
         rec = sc.record()
 
-        sp1 = np.fft.rfft(rec[0])
-        sp2 = np.fft.rfft(rec[1])
+        #sp1 = np.fft.rfft(rec[0])
+        #sp2 = np.fft.rfft(rec[1])
+        sp1 = sc.input.norm*np.fft.rfft(rec[0])/sc.input.samples
+        sp2 = sc.input.norm*np.fft.rfft(rec[1])/sc.input.samples
         cc = cc + sp1 * np.conjugate(sp2)
 
     cc = np.sqrt(abs(cc))/rounds

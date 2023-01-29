@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# 
+#
 
 import argparse, scard
 
@@ -51,8 +51,8 @@ if __name__ == '__main__':
 
     args, remaining = parser.parse_known_args()
 
-    assert args.srate == args.samples
-    assert args.channels == 1 or args.channels == 2, "invalid number of channels"
+    #assert args.srate == args.samples
+    #assert args.channels == 1 or args.channels == 2, "invalid number of channels"
 
     if args.list_devices:
         scard.query_devices()

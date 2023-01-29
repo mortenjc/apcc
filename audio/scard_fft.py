@@ -12,7 +12,7 @@ mpl.use('macosx')
 import matplotlib.pyplot as plt
 
 
-def main(sc, rounds):
+def main(sc):
     cc = np.zeros(96001)
     ccplot = plot.plot()
 
@@ -21,8 +21,8 @@ def main(sc, rounds):
 
     rec = sc.record()
 
-    sp1 = np.fft.rfft(rec[0])
-    sp2 = np.fft.rfft(rec[1])
+    sp1 = sc.input.norm*np.fft.rfft(rec[0])/sc.input.samples
+    sp2 = sc.input.norm*np.fft.rfft(rec[1])/sc.input.samples
 
     N = len(sp1)
     n = np.arange(N)
@@ -48,8 +48,6 @@ if __name__ == '__main__':
 
     args, remaining = parser.parse_known_args()
 
-    assert args.srate == args.samples
-    assert args.channels == 1 or args.channels == 2
 
     if args.l:
         scard.query_devices()
@@ -58,4 +56,4 @@ if __name__ == '__main__':
     input = scard.input(args.device, args.srate, args.samples, args.channels, args.norm)
     scard = scard.scard(input)
 
-    main(scard, args.rounds)
+    main(scard)
