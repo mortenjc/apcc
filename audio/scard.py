@@ -22,14 +22,14 @@ class scard():
         sd.default.samplerate = input.samplerate
 
 
-    def record(self):
+    def record(self, norm):
         nchan = self.input.channels
         nsamp =self.input.samples
         rec = sd.rec(nsamp)
         sd.wait()
         res = [[] for _ in range(nchan)]
         for ch in range(nchan):
-            res[ch] = [x[ch] for x in rec]
+            res[ch] = [norm * x[ch] for x in rec]
 
         assert len(res) == nchan, 'recording error (# of channels)'
         assert len(res[0]) == nsamp, 'recording error (# of samples)'

@@ -16,7 +16,7 @@ def main(scard, rounds):
     n = 0
     for r in range(rounds):
         print(f'round {r}')
-        rec = scard.record()
+        rec = scard.record(1.0)
         n += 1
 
         tmin, tmax = scard.stat(rec)
